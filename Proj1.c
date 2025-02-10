@@ -1,45 +1,65 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <time.h>
 #include <math.h>
 
-int pointsInside = 0;
-int totalPoints = 0;
+#define ARRAY_SIZE 10000
 
-void *runner(void *param);
+void *mergesort(void *param);
+
+typedef struct {
+	int first;
+	int last;
+} indices;
 
 int main(int argc, char *argv[]) {
-	pthread_t thread0, thread1, thread2, thread3, thread4;
-	pthread_create(&thread0, NULL, runner, NULL);
-	pthread_create(&thread1, NULL, runner, NULL);
-	pthread_create(&thread2, NULL, runner, NULL);
-	pthread_create(&thread3, NULL, runner, NULL);
-	pthread_create(&thread4, NULL, runner, NULL);
+	nt arr[ARRAY_SIZE];
+    	srand(time(NULL));
+
+    	// Fill the array with random integers
+    	for (int i = 0; i < ARRAY_SIZE; i++) {
+        	arr[i] = rand() % 100000;
+    	}
+
+    	// Print the first 10 elements to verify
+    	printf("First 10 elements of the array:\n");
+    	for (int i = 0; i < 10; i++) {
+        p	rintf("%d ", arr[i]);
+    	}
+    	printf("\n");
+	
+	indices *set1 = (indices *)param;
+	set1->first = 0;
+	set1->last = (int) ARRAY_SIZE/4;
+	
+	indices *set2 = (indeces *)param;
+	set2->first = (int) ARRAY_SIZE/4 + 1;
+	set2->last = (int) ARRAY_SIZE/2;
+	
+	indices *set3 = (indices *)param;
+	set3->first = (int) ARRAY_SIZE/2 + 1;
+	set3->last = (int) ARRAY_SIZE*0.75;
+	
+	indices *set4 = (indices *)param;
+	set4->first = (int) ARRAY_SIZE*0.75 + 1;
+	set4->last = ARRAY_SIZE - 1;
+	
+
+	pthread_t thread0, thread1, thread2, thread3;
+	pthread_create(&thread0, NULL, mergesort, NULL);
+	pthread_create(&thread1, NULL, mergesort, NULL);
+	pthread_create(&thread2, NULL, mergesort, NULL);
+	pthread_create(&thread3, NULL, mergesort, NULL);
 	
 	pthread_join(thread0, NULL);
 	pthread_join(thread1, NULL);
 	pthread_join(thread2, NULL);
 	pthread_join(thread3, NULL);
-	pthread_join(thread3, NULL);
-	
-	float pi = (float) 4 * pointsInside / totalPoints;
-	printf("%.5f\n", pi);
-	return 0;
 }
 
-//generates 1000000 points, saving data in global variables
-void *runner(void *param) {
-	srand(time(NULL));
-	float x, y;
-	for (int i = 0; i<1000000; i++) {
-		x = (float) rand() / RAND_MAX;
-		y = (float) rand() / RAND_MAX;
-		//Point is in the circle if the distance to center (0.5, 0.5) is within 0.5
-		float distance = sqrt(pow(x-0.5, 2) + pow(y-0.5, 2));
-		if (distance <= 0.5) {
-			pointsInside++;
-		}
-		totalPoints++;
+void *mergesort(void *param) {
+	//Enter code here
 	}
 	pthread_exit(0);	
 }
