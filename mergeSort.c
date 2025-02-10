@@ -71,7 +71,7 @@ void mergeSort(int arr[], int left, int right) {
 }
 
 int main(int argc, char *argv[]) {
-	nt arr[ARRAY_SIZE];
+    int arr[ARRAY_SIZE];
     srand(time(NULL));
 
 	for (int i = 0; i < ARRAY_SIZE; i++) {
