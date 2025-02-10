@@ -10,7 +10,6 @@ void *runner(void *param);
 void *merge(int arr[], int left, int mid, int right);
 void *mergeSort(int arr[], int left, int right);
 
-
 typedef struct {
 	int first;
 	int last;
@@ -24,36 +23,29 @@ int main(int argc, char *argv[]) {
     	for (int i = 0; i < ARRAY_SIZE; i++) {
         	arr[i] = rand() % 100000;
     	}
-
-    	// Print the first 10 elements to verify
-    	printf("First 10 elements of the array:\n");
-    	for (int i = 0; i < 10; i++) {
-        p	rintf("%d ", arr[i]);
-    	}
-    	printf("\n");
 	
-	indices *set1 = (indices *)param;
+	indices *set1 = (indices *) malloc(sizeof(indices));
 	set1->first = 0;
 	set1->last = (int) ARRAY_SIZE/4;
 	
-	indices *set2 = (indeces *)param;
+	indices *set2 = (indeces *) malloc(sizeof(indices));
 	set2->first = (int) ARRAY_SIZE/4 + 1;
 	set2->last = (int) ARRAY_SIZE/2;
 	
-	indices *set3 = (indices *)param;
+	indices *set3 = (indices *) malloc(sizeof(indices));
 	set3->first = (int) ARRAY_SIZE/2 + 1;
 	set3->last = (int) ARRAY_SIZE*0.75;
 	
-	indices *set4 = (indices *)param;
+	indices *set4 = (indices *) malloc(sizeof(indices));
 	set4->first = (int) ARRAY_SIZE*0.75 + 1;
 	set4->last = ARRAY_SIZE - 1;
 	
 
 	pthread_t thread0, thread1, thread2, thread3;
-	pthread_create(&thread0, NULL, mergesort, NULL);
-	pthread_create(&thread1, NULL, mergesort, NULL);
-	pthread_create(&thread2, NULL, mergesort, NULL);
-	pthread_create(&thread3, NULL, mergesort, NULL);
+	pthread_create(&thread0, NULL, mergesort, set1);
+	pthread_create(&thread1, NULL, mergesort, set2);
+	pthread_create(&thread2, NULL, mergesort, set3);
+	pthread_create(&thread3, NULL, mergesort, set4);
 	
 	pthread_join(thread0, NULL);
 	pthread_join(thread1, NULL);
@@ -61,17 +53,14 @@ int main(int argc, char *argv[]) {
 	pthread_join(thread3, NULL);
 }
 
+
 //Runner
 void *runner(void *param) {
-	int arr[] = { 12, 11, 13, 5, 6, 7 };
-    	int n = sizeof(arr) / sizeof(arr[0]);
-    
-      	// Sorting arr using mergesort
-    	mergeSort(arr, 0, n - 1);
-
-    	for (int i = 0; i < n; i++) {
-        	printf("%d ", arr[i]);
-	}
+	indices *set = (indices *)param;
+	int n = set->last - set->first + 1; 
+    	
+      	// Sorting array using mergesort
+    	mergeSort(arr, set->first, set->last);
 	pthread_exit(0);	
 }
 
