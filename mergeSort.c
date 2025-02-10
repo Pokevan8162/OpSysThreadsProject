@@ -1,6 +1,10 @@
 // C program for the implementation of merge sort
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <time.h>
+#include <math.h>
+#define ARRAY_SIZE 10000
 
 // Merges two subarrays of arr[].
 // First subarray is arr[left..mid]
@@ -66,10 +70,20 @@ void mergeSort(int arr[], int left, int right) {
     }
 }
 
-int main() {
-    int arr[] = { 12, 11, 13, 5, 6, 7 };
-    int n = sizeof(arr) / sizeof(arr[0]);
+int main(int argc, char *argv[]) {
+	nt arr[ARRAY_SIZE];
+    srand(time(NULL));
+
+	for (int i = 0; i < ARRAY_SIZE; i++) {
+        arr[i] = rand() % 100000;
+    }
     
+    printf("First 10 elements of the array:\n");
+	for (int i = 0; i < 10; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+    int n = sizeof(arr) / sizeof(arr[0]);    
       // Sorting arr using mergesort
     mergeSort(arr, 0, n - 1);
 
