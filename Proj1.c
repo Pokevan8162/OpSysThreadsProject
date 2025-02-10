@@ -63,7 +63,14 @@ int main(int argc, char *argv[]) {
 
 //Runner
 void *runner(void *param) {
-	//Enter code here
+	int arr[] = { 12, 11, 13, 5, 6, 7 };
+    	int n = sizeof(arr) / sizeof(arr[0]);
+    
+      	// Sorting arr using mergesort
+    	mergeSort(arr, 0, n - 1);
+
+    	for (int i = 0; i < n; i++) {
+        	printf("%d ", arr[i]);
 	}
 	pthread_exit(0);	
 }
@@ -127,16 +134,4 @@ void mergeSort(int arr[], int left, int right) {
         // Merge the sorted halves
         merge(arr, left, mid, right);
     }
-}
-
-int main() {
-    int arr[] = { 12, 11, 13, 5, 6, 7 };
-    int n = sizeof(arr) / sizeof(arr[0]);
-    
-      // Sorting arr using mergesort
-    mergeSort(arr, 0, n - 1);
-
-    for (int i = 0; i < n; i++)
-        printf("%d ", arr[i]);
-    return 0;
 }
