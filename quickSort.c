@@ -1,5 +1,9 @@
-// C program to implement Quick Sort Algorithm
 #include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <time.h>
+#include <math.h>
+#define ARRAY_SIZE 10000
 
 void swap(int* a, int* b) {
     int temp = *a;
@@ -48,12 +52,21 @@ void quickSort(int arr[], int low, int high) {
     }
 }
 
-int main() {
-  
-    int arr[] = { 4, 2, 5, 3, 1 };
+int main(int argc, char *argv[]) {
+	nt arr[ARRAY_SIZE];
+    srand(time(NULL));
+
+	for (int i = 0; i < ARRAY_SIZE; i++) {
+        arr[i] = rand() % 100000;
+    }
+    
+    printf("First 10 elements of the array:\n");
+	for (int i = 0; i < 10; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
     int n = sizeof(arr) / sizeof(arr[0]);
 
-    // calling quickSort() to sort the given array
     quickSort(arr, 0, n - 1);
 
     for (int i = 0; i < n; i++)
