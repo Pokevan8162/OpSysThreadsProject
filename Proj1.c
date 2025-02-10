@@ -53,7 +53,6 @@ int main(int argc, char *argv[]) {
 	pthread_join(thread3, NULL);
 }
 
-
 //Runner
 void *runner(void *param) {
 	indices *set = (indices *)param;
