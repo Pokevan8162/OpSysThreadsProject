@@ -16,7 +16,7 @@ typedef struct {
 } indices;
 
 int main(int argc, char *argv[]) {
-	nt arr[ARRAY_SIZE];
+	int arr[ARRAY_SIZE];
     	srand(time(NULL));
 
     	// Fill the array with random integers
