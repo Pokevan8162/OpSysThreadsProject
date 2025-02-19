@@ -5,7 +5,6 @@
 
 #define ARRAY_SIZE 10000
 
-// Merges two subarrays of arr[].
 void merge(int arr[], int left, int mid, int right) {
     int i, j, k;
     int n1 = mid - left + 1;
@@ -33,7 +32,6 @@ void merge(int arr[], int left, int mid, int right) {
     while (j < n2) arr[k++] = rightArr[j++];
 }
 
-// Merge sort function
 void mergeSort(int arr[], int left, int right) {
     if (left < right) {
         int mid = left + (right - left) / 2;
@@ -52,30 +50,18 @@ void* runMergeSort(void* arg) {
         arr[i] = rand() % 100000;
     }
 
-    printf("First 10 elements before sorting:\n");
-    for (int i = 0; i < 10; i++) {
-        printf("%d ", arr[i]);
-    }
-    printf("\n");
-
     clock_gettime(CLOCK_MONOTONIC, &start);
     mergeSort(arr, 0, ARRAY_SIZE - 1);
     clock_gettime(CLOCK_MONOTONIC, &end);
 
     double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
     printf("Elapsed time: %f seconds\n", elapsed);
-
-    printf("First 10 elements after sorting:\n");
-    for (int i = 0; i < 10; i++) {
-        printf("%d ", arr[i]);
-    }
-    printf("\n");
     
     return NULL;
 }
 
 int main(int argc, char *argv[]) {
-    pthread_t singleThread;
+    pthread_t singleThread; // Creates a single thread so we can enforce that the program is running on only one thread
     pthread_create(&singleThread, NULL, runMergeSort, NULL);
     pthread_join(singleThread, NULL);
     return 0;
