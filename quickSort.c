@@ -51,18 +51,13 @@ void* runQuicksort(void* arg) {
     double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;  // Calculate time elapsed
     printf("Elapsed time: %f seconds\n", elapsed);
 
-    for (int i = 0; i < n; i++)
-        printf("%d ", arr[i]);
-
-    printf("\n");
     return NULL;
 }
 
 int main(int argc, char *argv[]) {
-    pthread_t singleThread;
-
-    pthread_create(&singleThread, NULL, runQuicksort, NULL); // Start thread
-    pthread_join(singleThread, NULL);  // Wait for thread to finish
+    pthread_t singleThread; // Creates a single thread to enforce only one threads functionality during processing
+    pthread_create(&singleThread, NULL, runQuicksort, NULL);
+    pthread_join(singleThread, NULL);
 
     return 0;
 }
