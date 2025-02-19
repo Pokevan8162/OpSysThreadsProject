@@ -1,0 +1,9 @@
+time_t start, end; // Define variables
+time(&start);      // Record start time
+
+// Main Function
+
+time(&end);        // Record end time
+
+double elapsed = difftime(end, start);           // Calculate time elapsed
+printf("Elapsed time: %.2f seconds\n", elapsed); // Print time elapsed
