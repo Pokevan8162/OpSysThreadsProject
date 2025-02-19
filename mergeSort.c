@@ -1,3 +1,4 @@
+// Evan Stoller, Ben Kuehner, Ryan Junod
 // Average computation time: 0.001711 seconds (10 test runs)
 #include <stdio.h>
 #include <stdlib.h>
