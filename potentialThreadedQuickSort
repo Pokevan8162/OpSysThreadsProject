@@ -1,0 +1,127 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <time.h>
+
+#define ARRAY_SIZE 10000
+#define THREAD_THRESHOLD 1000  // Minimum array size for threading
+#define MAX_THREADS 5           // Max active threads at a time
+
+pthread_mutex_t lock;
+pthread_cond_t cond;
+int active_threads = 0;          // Tracks the number of active threads
+
+typedef struct {
+    int* arr;
+    int low;
+    int high;
+} ThreadData;
+
+void swap(int* a, int* b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int partition(int arr[], int low, int high) {
+    int pivot = arr[high];
+    int i = low - 1;
+    for (int j = low; j < high; j++) {
+        if (arr[j] < pivot) {
+            i++;
+            swap(&arr[i], &arr[j]);
+        }
+    }
+    swap(&arr[i + 1], &arr[high]);
+    return i + 1;
+}
+
+void* threadedQuickSort(void* arg) {
+    ThreadData* data = (ThreadData*) arg;
+    int low = data->low, high = data->high;
+    int* arr = data->arr;
+
+    if (low < high) {
+        int pi = partition(arr, low, high);
+
+        pthread_t leftThread, rightThread;
+        ThreadData leftData = {arr, low, pi - 1};
+        ThreadData rightData = {arr, pi + 1, high};
+
+        int leftThreadCreated = 0, rightThreadCreated = 0;
+
+        // Lock before modifying thread count
+        pthread_mutex_lock(&lock);
+        while (active_threads >= MAX_THREADS) {
+            pthread_cond_wait(&cond, &lock);
+        }
+        if ((pi - low) > THREAD_THRESHOLD && active_threads < MAX_THREADS) {
+            active_threads++;
+            pthread_create(&leftThread, NULL, threadedQuickSort, &leftData);
+            leftThreadCreated = 1;
+        }
+        pthread_mutex_unlock(&lock);
+
+        if (leftThreadCreated) {
+            pthread_join(leftThread, NULL);  // Wait for left side to finish
+
+            pthread_mutex_lock(&lock);
+            active_threads--;  // Decrement thread count
+            pthread_cond_signal(&cond);
+            pthread_mutex_unlock(&lock);
+        } else {
+            threadedQuickSort(&leftData);
+        }
+
+        pthread_mutex_lock(&lock);
+        while (active_threads >= MAX_THREADS) {
+            pthread_cond_wait(&cond, &lock);
+        }
+        if ((high - pi) > THREAD_THRESHOLD && active_threads < MAX_THREADS) {
+            active_threads++;
+            pthread_create(&rightThread, NULL, threadedQuickSort, &rightData);
+            rightThreadCreated = 1;
+        }
+        pthread_mutex_unlock(&lock);
+
+        if (rightThreadCreated) {
+            pthread_join(rightThread, NULL);  // Wait for right side
+
+            pthread_mutex_lock(&lock);
+            active_threads--;
+            pthread_cond_signal(&cond);
+            pthread_mutex_unlock(&lock);
+        } else {
+            threadedQuickSort(&rightData);
+        }
+    }
+    return NULL;
+}
+
+int main() {
+    int arr[ARRAY_SIZE];
+    srand(time(NULL));
+
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+        arr[i] = rand() % 100000;
+    }
+
+    ThreadData mainData = {arr, 0, ARRAY_SIZE - 1};
+
+    pthread_mutex_init(&lock, NULL);
+    pthread_cond_init(&cond, NULL);
+
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    threadedQuickSort(&mainData);  // Start the sorting process
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    printf("Elapsed time: %f seconds\n", elapsed);
+
+    pthread_mutex_destroy(&lock);
+    pthread_cond_destroy(&cond);
+
+    return 0;
+}
