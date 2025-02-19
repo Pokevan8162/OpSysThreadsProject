@@ -1,9 +1,11 @@
-time_t start, end; // Define variables
-time(&start);      // Record start time
+#include <time.h>
+struct timespec start, end;                  // Define variables
+
+clock_gettime(CLOCK_MONOTONIC, &start);      // Record start time
 
 // Main Function
 
-time(&end);        // Record end time
+clock_gettime(CLOCK_MONOTONIC, &end);        // Record end time
 
-double elapsed = difftime(end, start);           // Calculate time elapsed
-printf("Elapsed time: %.2f seconds\n", elapsed); // Print time elapsed
+double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9; // Calculate time elapsed
+printf("Elapsed time: %f seconds\n", elapsed);                                      // Print time elapsed
