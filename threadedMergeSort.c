@@ -1,3 +1,4 @@
+// Evan Stoller, Ben Kuehner, Ryan Junod
 // Average computation time: 0.0010178 seconds (10 test runs, 0.0006932 seconds faster on average than merge sort)
 #include <stdio.h>
 #include <stdlib.h>
