@@ -2,18 +2,16 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
-
 #define ARRAY_SIZE 10000
-#define THREAD_COUNT 4  // Number of threads
+#define THREAD_COUNT 4
 
 typedef struct {
     int left;
     int right;
-} merge_sort_args;
+} indices;
 
-int arr[ARRAY_SIZE];  // Global array
+int arr[ARRAY_SIZE];
 
-// Merge function (same as before)
 void merge(int arr[], int left, int mid, int right) {
     int i, j, k;
     int n1 = mid - left + 1;
@@ -42,7 +40,6 @@ void merge(int arr[], int left, int mid, int right) {
     while (j < n2) arr[k++] = rightArr[j++];
 }
 
-// Regular merge sort
 void mergeSort(int arr[], int left, int right) {
     if (left < right) {
         int mid = left + (right - left) / 2;
@@ -52,16 +49,14 @@ void mergeSort(int arr[], int left, int right) {
     }
 }
 
-// Thread function for parallel merge sort
-void* mergeSortThread(void* arg) {
-    merge_sort_args *args = (merge_sort_args*)arg;
+void* mergeSortThread(void* arg) { // What the threads use for their specific array indices
+    indices *args = (indices*)arg;
     mergeSort(arr, args->left, args->right);
     pthread_exit(NULL);
 }
 
-// Multi-threaded merging function
-void* mergeThread(void* arg) {
-    merge_sort_args *args = (merge_sort_args*)arg;
+void* mergeThread(void* arg) { // What the threads use to merge the arrays back together
+    indices *args = (indices*)arg;
     int left = args->left;
     int right = args->right;
     int mid = left + (right - left) / 2;
@@ -72,44 +67,36 @@ void* mergeThread(void* arg) {
 
 int main() {
     pthread_t threads[THREAD_COUNT];
-    merge_sort_args thread_data[THREAD_COUNT];
+    indices threadIndices[THREAD_COUNT]; // Carries the indices per thread
 
     srand(time(NULL));
     for (int i = 0; i < ARRAY_SIZE; i++) { 
         arr[i] = rand() % 100000;
     }
 
-    printf("First 10 elements before sorting:\n");
-    for (int i = 0; i < 10; i++) {
-        printf("%d ", arr[i]);
-    }
-    printf("\n");
-
     int partitionSize = ARRAY_SIZE / THREAD_COUNT;
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    // Step 1: Create threads for merge sort
-    for (int i = 0; i < THREAD_COUNT; i++) {
-        thread_data[i].left = i * partitionSize;
-        thread_data[i].right = (i == THREAD_COUNT - 1) ? (ARRAY_SIZE - 1) : ((i + 1) * partitionSize - 1);
-        pthread_create(&threads[i], NULL, mergeSortThread, &thread_data[i]);
+    for (int i = 0; i < THREAD_COUNT; i++) { // Creates threads and puts them in the merge sort function
+        threadIndices[i].left = i * partitionSize;
+        threadIndices[i].right = (i == THREAD_COUNT - 1) ? (ARRAY_SIZE - 1) : ((i + 1) * partitionSize - 1);
+        pthread_create(&threads[i], NULL, mergeSortThread, &threadIndices[i]);
     }
 
-    for (int i = 0; i < THREAD_COUNT; i++) {
+    for (int i = 0; i < THREAD_COUNT; i++) { // Waits for the threads to finish sorting
         pthread_join(threads[i], NULL);
     }
 
-    // Step 2: Multi-threaded merging in stages
-    int mergePass = THREAD_COUNT;
-    while (mergePass > 1) {
-        int mergeThreadCount = mergePass / 2;
+    int mergePass = THREAD_COUNT; // Limit on how many merges are allowed to happen at once, up to how many threads we define it as
+    while (mergePass > 1) { // While there are still arrays that need to be merged
+        int mergeThreadCount = mergePass / 2; // We wont need all 4 threads to merge 4 subarrays (for ex), we'd only need two, so divide it by 2
         pthread_t mergeThreads[mergeThreadCount];
-        merge_sort_args mergeData[mergeThreadCount];
+        indices mergeData[mergeThreadCount];
 
         for (int i = 0; i < mergeThreadCount; i++) {
-            mergeData[i].left = thread_data[i * 2].left;
-            mergeData[i].right = thread_data[i * 2 + 1].right;
+            mergeData[i].left = threadIndices[i * 2].left;
+            mergeData[i].right = threadIndices[i * 2 + 1].right;
 
             pthread_create(&mergeThreads[i], NULL, mergeThread, &mergeData[i]);
         }
@@ -123,13 +110,7 @@ int main() {
 
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-
     printf("Elapsed time: %f seconds\n", elapsed);
-    printf("First 10 elements after sorting:\n");
-    for (int i = 0; i < 10; i++) {
-        printf("%d ", arr[i]);
-    }
-    printf("\n");
 
     return 0;
 }
