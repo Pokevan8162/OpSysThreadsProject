@@ -1,3 +1,4 @@
+// Evan Stoller, Ben Kuehner, Ryan Junod
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
