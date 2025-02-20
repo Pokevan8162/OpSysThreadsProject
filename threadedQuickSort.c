@@ -1,3 +1,5 @@
+// Evan Stoller, Ben Kuehner, Ryan Junod
+// Average computation time: 0.0642516 seconds (10 test runs, 0.0631003 seconds slower on average than single-threaded quick sort)
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -12,7 +14,7 @@ typedef struct {
     int high;
 } indices;
 
-int arr[ARRAY_SIZE]; // Global array shared beween threads
+int arr[ARRAY_SIZE];
 
 // Quicksort Code ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void swap(int* a, int* b) {
@@ -51,7 +53,7 @@ void* quickSortThread(void* arg) {
     pthread_exit(NULL);
 }
 
-//Thread partitions array and returns pivot
+// Thread partitions array and returns pivot
 void* threadPartition(void* arg) {
     indices *data = (indices*)arg;
     int pivot = partition(data->arr, data->low, data->high);
@@ -71,7 +73,7 @@ int main() {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);  // Start timer
 
-    //Create two threads to partition the 2 partitions
+    // Create two threads to partition the 2 partitions
     int pivot = partition(arr, 0, ARRAY_SIZE-1);
     for (int i = 0; i<2; i++) {
         thread_data[i].arr = arr;
@@ -79,7 +81,7 @@ int main() {
         thread_data[i].high = (i == 0) ? (pivot) : (ARRAY_SIZE - 1);
     	pthread_create(&threads[i], NULL, threadPartition, &thread_data[i]);
     }
-    //After the two threads are done, create 4 threads that will sort the rest of the array
+    // After the two threads are done, create 4 threads that will sort the rest of the array
     void* newPivot;
     pthread_join(threads[0], &newPivot);
     int nextPivot = (int)(long)newPivot;
@@ -104,10 +106,6 @@ int main() {
     clock_gettime(CLOCK_MONOTONIC, &end);  // End timer
     double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
     printf("Elapsed time: %f seconds\n", elapsed);
-    
-    //print sorted array
-    for (int i = 0; i < ARRAY_SIZE; i++)
-        printf("%d ", arr[i]);
 
     return 0;
 }
