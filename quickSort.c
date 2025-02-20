@@ -1,5 +1,5 @@
 // Evan Stoller, Ben Kuehner, Ryan Junod
-// Average computation time: 0.0012904 seconds (10 test runs)
+// Average computation time: 0.0011513 seconds (10 test runs)
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
