@@ -4,3 +4,6 @@ We must take these logical addresses, look them up in the TLB or Transition look
 If the process is in the TLB, grab the respective frame number and grab it from our virtual memory
 If the process is not in the TLB, grab the frame number from the page table, grab it from virtual memory, storing it in the TLB using LRU algorithm
 Put the byte into output.txt
+
+The logical addresses have a page number and offset consisting of the last 8 bits respectfully
+We will have 256 frames of 2^8 bytes. However, only 16 or 2^4 entries in TLB. 
