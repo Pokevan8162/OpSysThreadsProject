@@ -7,3 +7,10 @@ Put the byte into output.txt
 
 The logical addresses have a page number and offset consisting of the last 8 bits respectfully
 We will have 256 frames of 2^8 bytes. However, only 16 or 2^4 entries in TLB. 
+
+Steps:
+
+1. Read address from addresses.txt
+2. Translate that address from logical to physical with TLB and page table
+3. Find that address in .bin file
+4. Output the contents at that address
