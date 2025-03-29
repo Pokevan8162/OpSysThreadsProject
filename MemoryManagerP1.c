@@ -11,10 +11,25 @@ typedef struct {
     int frame;
 } tlbPage;
 
+int decToBinary(int decimal) {
+    int binary = 0;
+    int place = 1;
+
+    while (decimal > 0) {
+        int remainder = decimal % 2;
+        binary += remainder * place;
+        place *= 10;
+        decimal /= 2;
+    }
+
+    return binary;
+}
+
 // Function to read addresses from a text file
 int readAddresses() {
     FILE *file;
     int value;
+    int binValue;
     int index = 0;
 
     file = fopen("addresses.txt", "r");
@@ -25,7 +40,8 @@ int readAddresses() {
 
     // Read integer values from file
     while (fscanf(file, "%d", &value) == 1 && index < MAX_ADDRESSES) {
-        addresses[index++] = value;
+        binValue = decToBinary(value);
+        addresses[index++] = binValue;
     }
 
     fclose(file);
