@@ -87,5 +87,10 @@ int main() {
 
     tlbPage[16] TLB;
     
+    // Main loop, iterates through list of addresses
+    for (int i = 0; i < MAX_ADDRESSES; i++) {
+        
+    }
+    
     return 0;
 }
