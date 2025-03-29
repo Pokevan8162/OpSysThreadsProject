@@ -3,13 +3,18 @@
 
 #define MAX_ADDRESSES 1000
 
-int addresses[MAX_ADDRESSES];
+typedef struct {
+    int page;
+    int offset;
+} address;
 
 // Used by TLB, stored in binary
 typedef struct {
     int page;
     int frame;
 } tlbPage;
+
+address addresses[MAX_ADDRESSES];
 
 int decToBinary(int decimal) {
     int binary = 0;
@@ -101,6 +106,7 @@ int main() {
         free(binaryData); // Free allocated memory
     }
 
+    
     tlbPage[16] TLB;
     
     // Main loop, iterates through list of addresses
