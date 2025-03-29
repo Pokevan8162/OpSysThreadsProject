@@ -9,7 +9,7 @@ int addresses[MAX_ADDRESSES];
 typedef struct {
     int page;
     int frame;
-} tblPage;
+} tlbPage;
 
 // Function to read addresses from a text file
 int readAddresses() {
@@ -85,7 +85,7 @@ int main() {
         free(binaryData); // Free allocated memory
     }
 
-    int[16] TLB;
+    tlbPage[16] TLB;
     
     return 0;
 }
