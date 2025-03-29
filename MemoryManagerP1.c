@@ -5,6 +5,11 @@
 
 int addresses[MAX_ADDRESSES];
 
+typedef struct {
+    int page;
+    int offset;
+} tblPage;
+
 // Function to read addresses from a text file
 int readAddresses() {
     FILE *file;
