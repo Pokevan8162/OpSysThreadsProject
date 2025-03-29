@@ -5,9 +5,10 @@
 
 int addresses[MAX_ADDRESSES];
 
+// Used by TLB, stored in binary
 typedef struct {
     int page;
-    int offset;
+    int frame;
 } tblPage;
 
 // Function to read addresses from a text file
@@ -84,5 +85,7 @@ int main() {
         free(binaryData); // Free allocated memory
     }
 
+    int[16] TLB;
+    
     return 0;
 }
