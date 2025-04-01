@@ -23,7 +23,7 @@ typedef struct {
   int physicalAddress;
 } address;
 
-// Used by TLB and pageTable, stored in binary
+// Used by pageTable, stored in binary
 typedef struct {
   int page;
   int frame;
@@ -251,7 +251,6 @@ int main() {
     realTLB[i].frame = -1;
     realTLB[i].page = -1;
   }
-  printf("Initiated the page table and TLB table to empty status!\n");
 
   int frame;        // stores current frame of page
   signed char data; // stores current data of page
