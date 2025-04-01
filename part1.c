@@ -141,6 +141,7 @@ signed char *readBinPage(int page) {
 int searchTLB(int page) {
   for (int i = 0; i < TLB_SIZE; i++) {
     if (realTLB[i].page == page) {
+      realTLB[i].idle = 0; // since we just accesses this TLB page, reset the idle to 0 (LRU)
       return realTLB[i].frame;
     }
   }
