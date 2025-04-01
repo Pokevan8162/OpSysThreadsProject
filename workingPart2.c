@@ -312,7 +312,7 @@ int main() {
         printf("adding to page table, frame: %d\n", frame);
         int victimFrame = addToPageTable(addresses[i].page, frame);
         printf("added to page table\n");
-        
+
         if (physicalMemoryIndex == 128) {
             frame = victimFrame;
         }
