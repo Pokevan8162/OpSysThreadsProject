@@ -1,8 +1,8 @@
 // This file will NOT match correct.txt, but it is incorrect in a meaningful
 // way. The physical addresses will be different because, since we have more
-// pages coming in than memory available, a FIFO algorithm will replace pages.
+// pages coming in than memory available, an LRU algorithm will replace pages.
 // Thus, physical addresses will not match once pages are removed. Instead of
-// the physical address being capped at 65k, it will be capped at 32k and loop
+// the physical address being capped at ~65k, it will be capped at ~32k and loop
 // "circularly".
 
 #include <stdio.h>
