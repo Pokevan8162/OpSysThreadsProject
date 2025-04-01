@@ -19,8 +19,8 @@ int virtualAddress;
 int physicalAddress;
 int memValue;
 int physicalMemoryIndex = 0;
-int TLBIndex = 0;
-int pageTableIndex = 0;
+int TLBIndex = 0; // same thing as TLB.size()
+int pageTableIndex = 0; // same thing as pageTable.size()
 int TLBHits = 0;
 int pageFaults = 0;
 
@@ -31,17 +31,17 @@ typedef struct {
   int physicalAddress;
 } address;
 
-// Used by TLB and pageTable, stored in binary
+// Used by TLB and pageTable
 typedef struct {
   int page;
   int frame;
   long long timeStamp;
 } pageInfo;
 
-// utilized by physical memory to store the page number and the page's actual
+// utilized by physical memory to store the page's actual
 // binary data. the frames are the actual index of this object in the
-// physicalMemory array. for example, if page 5 is stored at index 15, it is
-// frame 15.
+// physicalMemory array. for example, if page 5 is stored at index 15 in physical memory, it is
+// actually stored in frame 15.
 typedef struct {
   signed char *pageData;
 } physicalMemoryBlock;
@@ -117,8 +117,7 @@ int loadAddresses() {
   return 0;
 }
 
-// reads entire page data and returns it (to be assigned to a physical memory's
-// page's pageData)
+// reads entire page data and returns it (to be assigned to a physical memory's pageData)
 signed char *readBinPage(int page) {
   int index = page * PAGE_SIZE;
 
@@ -146,10 +145,11 @@ signed char *readBinPage(int page) {
 // used for timestamps
 long long get_nanoseconds() {
   struct timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);             // Get current time
-  return (long long)ts.tv_sec * 1e9 + ts.tv_nsec; // Convert to nanoseconds
+  clock_gettime(CLOCK_REALTIME, &ts);
+  return (long long)ts.tv_sec * 1e9 + ts.tv_nsec;
 }
 
+// find LRU page in page table
 int findVictimInPageTable() {
   long long oldestTimeStamp = pageTable[0].timeStamp;
   int victim = 0;
@@ -165,6 +165,7 @@ int findVictimInPageTable() {
   return victim;
 }
 
+// find LRU page in TLB
 int findVictimInTLB() {
   long long oldestTimeStamp = TLB[0].timeStamp;
   int victim = 0;
@@ -184,19 +185,19 @@ int findVictimInTLB() {
 int searchTLB(int page) {
   for (int i = 0; i < TLB_SIZE; i++) {
     if (TLB[i].page == page) {
-      TLB[i].timeStamp = get_nanoseconds(); // Update timestamp since we just used it
+      TLB[i].timeStamp = get_nanoseconds(); // update timestamp since we just used it
       return TLB[i].frame;
     }
   }
   return -1;
 }
 
-// use FIFO to add to the TLB (CHANGE TO LRU)
+// use LRU to add to the TLB
 void addToTLB(int page, int frame) {
   // if TLB is full,
   if (TLBIndex == TLB_SIZE) {
+    // set the LRU element equal to the new page and frame
     int victimIndex = findVictimInTLB();
-    // Set the LRU element equal to the new page and frame
     TLB[victimIndex].page = page;
     TLB[victimIndex].frame = frame;
     TLB[victimIndex].timeStamp = get_nanoseconds();
@@ -209,36 +210,34 @@ void addToTLB(int page, int frame) {
 }
 
 // takes the actual page data and puts it into physical memory at the specified
-// frame
+// frame. only used if memory is not full.
 void addToPhysicalMemory(int page, int frame) {
-    physicalMemory[frame].pageData = readBinPage(page);
+  physicalMemory[frame].pageData = readBinPage(page);
   // Increment physical memory index so we can put the next page in the
   // successive spot
   physicalMemoryIndex++;
 }
 
-// LRU algorithm in memory
+// LRU algorithm in memory. only used when memory is full
 void addToPhysicalMemoryWithVictim(int victimFrame, int newPage) {
     physicalMemory[victimFrame].pageData = readBinPage(newPage);
   // No need to increment physical memory index since we are full
 }
 
-// now returns the frame of the removed victim so we can remove it in memory
-// too.
+// now returns the frame of the removed victim (if we remove one) so we can remove it in memory
+// too. if no removed victim, return -1.
 int addToPageTable(int page, int frame) {
-  // if we don't find a victim, return -1.
   int victimFrame = -1;
   // If pageTable is full, eliminate the LRU element
   if (pageTableIndex == PAGE_TABLE_SIZE) {
-    int victimIndex = findVictimInPageTable();
     // Set the LRU element equal to the new page and frame
+    int victimIndex = findVictimInPageTable();
     victimFrame = pageTable[victimIndex].frame;
     pageTable[victimIndex].page = page;
     pageTable[victimIndex].frame = frame;
     pageTable[victimIndex].timeStamp = get_nanoseconds();
   } else {
-    // page table is not full. Add at page table index and then increment page
-    // table index
+    // page table is not full. Add at page table index and then increment page table index
     pageTable[pageTableIndex].page = page;
     pageTable[pageTableIndex].frame = frame;
     pageTable[pageTableIndex].timeStamp = get_nanoseconds();
@@ -248,12 +247,11 @@ int addToPageTable(int page, int frame) {
   return victimFrame;
 }
 
-// if page is found, return index in the table itself, else return -1
+// if page is found, return frame, else return -1
 int searchPageTable(int page) {
   for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
     if (pageTable[i].page == page) {
-      pageTable[i].timeStamp =
-          get_nanoseconds(); // Update timestamp since we just used it
+      pageTable[i].timeStamp = get_nanoseconds(); // Update timestamp since we just used it
       return pageTable[i].frame;
     }
   }
@@ -264,11 +262,12 @@ int main() {
   // create output.txt file
   FILE *output = fopen("output.txt", "w");
 
+  // load addresses
   if (loadAddresses() != 0) {
     return -1;
   }
 
-  // Instantiate pageTable array and TLB array
+  // instantiate pageTable array and TLB array
   for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
     pageTable[i].frame = -1;
     pageTable[i].page = -1;
@@ -283,18 +282,13 @@ int main() {
   int frame;        // stores current frame of page
   signed char data; // stores current data of page
 
-  // Main loop, iterates through list of addresses
+  // main loop, iterates through list of addresses
   for (int i = 0; i < MAX_ADDRESSES; i++) {
     // search TLB for current page.
-    printf("Searching tlb: %d\n", i);
     frame = searchTLB(addresses[i].page);
-    printf("tlb searched. frame: %d\n", frame);
     if (frame == -1) {
       // TLB miss, search page table for current page
-      printf("Searching page table\n");
       frame = searchPageTable(addresses[i].page);
-      printf("page table searched\n");
-
       if (frame == -1) {
         pageFaults++;
         // Page fault. Update the frame to
@@ -309,57 +303,40 @@ int main() {
         }
         // Add the page to the page table at frame, storing the page
         // and frame info, and grab the data at the memory spot.
-        printf("adding to page table, frame: %d\n", frame);
         int victimFrame = addToPageTable(addresses[i].page, frame);
-        printf("added to page table\n");
 
         if (physicalMemoryIndex == 128) {
             frame = victimFrame;
         }
 
         // memory is full, we need to remove LRU page
-        printf("Victim frame: %d\n", victimFrame);
         if (victimFrame != -1) {
-            printf("adding to memory when its full\n");
-          addToPhysicalMemoryWithVictim(victimFrame, addresses[i].page); // make new method that takes victim frame as an index
+          addToPhysicalMemoryWithVictim(victimFrame, addresses[i].page);
           addresses[i].physicalAddress = (victimFrame * PAGE_SIZE) + addresses[i].offset;
           data = physicalMemory[victimFrame].pageData[addresses[i].offset];
-          printf("added to full memory\n");
         } else {
           // memory is not full, continue with scheduled programming
-          printf("adding to memory when its not full\n");
           addToPhysicalMemory(addresses[i].page, physicalMemoryIndex);
-          addresses[i].physicalAddress =
-              (frame * PAGE_SIZE) + addresses[i].offset;
-          printf("Grabbing data at frame: %d\n", frame);
+          addresses[i].physicalAddress = (frame * PAGE_SIZE) + addresses[i].offset;
           data = physicalMemory[frame].pageData[addresses[i].offset];
-          printf("added to not full memory\n");
         }
 
       } else {
-        // Page was found in page table. Get the data and set the physical
-        // address.
-        printf("page was found in page table\n");
+        // Page was found in page table. Get the data and set the physical address.
         data = physicalMemory[frame].pageData[addresses[i].offset];
         addresses[i].physicalAddress = frame * PAGE_SIZE + addresses[i].offset;
-        printf("page was found in page table done\n");
       }
       // Add the page to the TLB. This will run regardless of what happened,
       // following the true nature of the TLB.
-      printf("adding to tlb\n");
       addToTLB(addresses[i].page, frame);
-      printf("tlb added to\n");
     } else {
       // page was found in TLB. save the data and physical address.
-      printf("page found in tlb\n");
       TLBHits++;
       data = physicalMemory[frame].pageData[addresses[i].offset];
       addresses[i].physicalAddress = frame * PAGE_SIZE + addresses[i].offset;
-      printf("page saved from tlb\n");
     }
     // write the data to output.txt
-    fprintf(output, "Virtual address: %d Physical address: %d Value: %d\n",
-            addresses[i].value, addresses[i].physicalAddress, data);
+    fprintf(output, "Virtual address: %d Physical address: %d Value: %d\n", addresses[i].value, addresses[i].physicalAddress, data);
   }
   // calculate TLB hit rate and page fault rate
   float tlbHitRate = (float)TLBHits / MAX_ADDRESSES;
@@ -371,6 +348,7 @@ int main() {
 
   fclose(output);
 
+  // free memories
   for (int i = 0; i < PHYSICAL_MEMORY_SIZE; i++) {
     free(physicalMemory[i].pageData);
   }
