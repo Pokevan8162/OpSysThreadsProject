@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_ADDRESSES 20
+#define MAX_ADDRESSES 1000
 #define TLB_SIZE 16
 #define PAGE_TABLE_SIZE 128
 #define PHYSICAL_MEMORY_SIZE 128
