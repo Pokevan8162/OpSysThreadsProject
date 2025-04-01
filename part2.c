@@ -18,7 +18,7 @@
 int virtualAddress;
 int physicalAddress;
 int memValue;
-int physicalMemoryIndex = 0;
+int physicalMemoryIndex = 0; // basically physicalMemory.size()
 int TLBIndex = 0; // same thing as TLB.size()
 int pageTableIndex = 0; // same thing as pageTable.size()
 int TLBHits = 0;
