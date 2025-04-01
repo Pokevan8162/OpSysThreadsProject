@@ -29,6 +29,13 @@ typedef struct {
   int frame;
 } pageInfo;
 
+// Used by the TLB
+typedef struct {
+  int page;
+  int frame;
+  int idle;
+} tlbInfo;
+
 // utilized by physical memory to store the page number and the page's actual
 // binary data. the frames are the actual index of this object in the
 // physicalMemory array. for example, if page 5 is stored at index 15, it is
@@ -40,44 +47,43 @@ typedef struct {
 // instantiate arrays
 address addresses[MAX_ADDRESSES];
 pageInfo pageTable[PAGE_TABLE_SIZE];
-pageInfo TLB[TLB_SIZE];
+pageInfo TLB[TLB_SIZE]; // When using FIFO
+tlbInfo realTLB[TLB_SIZE]; //When using LRU
 physicalMemoryBlock physicalMemory[PHYSICAL_MEMORY_SIZE];
 
 // conversion and loading methods ---------------------------------------------
 
-long int decToBinary(long int decimal) {
-  long int binary = 0;
-  long int place = 1;
+// Converts base 10 numbers to base 2, but omits leading 0's
+long long decToBinary(long long decimal) {
+  long long binary = 0;
+  long long place = 1;
 
   while (decimal > 0) {
-    long int remainder = decimal % 2;
-    binary += remainder * place;
+    binary += (decimal % 2) * place;
     place *= 10;
     decimal /= 2;
   }
   return binary;
 }
 
-long int binaryToDec(long int binary) {
-  long int decimal = 0;
-  long int base = 1;
-  long int remainder;
+// Converts base 2 numbers to base 2
+long long binaryToDec(long long binary) {
+  long long decimal = 0;
+  long long base = 1;
 
   while (binary > 0) {
-    remainder = binary % 10;
-    decimal += remainder * base;
+    decimal += (binary % 10) * base;
     binary /= 10;
     base *= 2;
   }
-
   return decimal;
 }
 
 int loadAddresses() {
   FILE *file;
-  long int value;
-  long int binValue;
-  long int divisor = 100000000;
+  long long value;
+  long long binValue;
+  long long divisor = 100000000;
   int pageNumber;
   int pageOffset;
   int index = 0;
@@ -88,19 +94,18 @@ int loadAddresses() {
     return 1;
   }
 
-  while (fscanf(file, "%ld", &value) == 1 && index < MAX_ADDRESSES) {
+  while (fscanf(file, "%lld", &value) == 1 && index < MAX_ADDRESSES) {
     // convert integer to binary in order to retrieve page num and offset
     binValue = decToBinary(value);
     // split binary into first 8 and last 8 digits (exclude useless zeros)
-    pageNumber = binValue / divisor;
-    long int leftMultipler = pageNumber * divisor;
+    pageNumber = binValue / divisor; 
+    long long leftMultipler = pageNumber * divisor;
     pageOffset = binValue - leftMultipler;
     // return to decimal so we can iterate through pages with pageNumber and the
     // offset
     addresses[index].page = binaryToDec(pageNumber);
     addresses[index].offset = binaryToDec(pageOffset);
     addresses[index].value = value;
-
     index++;
   }
 
@@ -139,15 +144,15 @@ signed char *readBinPage(int page) {
 // if page is found, return index in the TLB itself, else return -1
 int searchTLB(int page) {
   for (int i = 0; i < TLB_SIZE; i++) {
-    if (TLB[i].page == page) {
-      return TLB[i].frame;
+    if (realTLB[i].page == page) {
+      return realTLB[i].frame;
     }
   }
   return -1;
 }
 
 // use FIFO to add to the TLB
-void addToTLB(int page, int frame) {
+void addToTLBFIFO(int page, int frame) {
   // if TLB is full,
   if (TLB[TLB_SIZE - 1].page != -1) {
     for (int i = 0; i < TLB_SIZE; i++) {
@@ -160,6 +165,28 @@ void addToTLB(int page, int frame) {
     // TLB is not full. Add at TLB Index and then increment TLB Index.
     TLB[TLBIndex].page = page;
     TLB[TLBIndex].frame = frame;
+    TLBIndex++;
+  }
+}
+
+// use LRU to add to the TLB
+void addToTLBLRU(int page, int frame) {
+  // if TLB is full
+  if (realTLB[TLB_SIZE - 1].page != -1) {
+    int highIdle = 0;
+    for (int i = 0; i < TLB_SIZE; i++) {
+      realTLB[i].idle++;
+      // Get TLB index for highest idle page
+      if (realTLB[i].idle > realTLB[highIdle].idle) {
+        highIdle = i;
+      }
+    }
+    realTLB[highIdle].page = page;
+    realTLB[highIdle].frame = frame;
+  } else {
+    //TLB is not full. Add at TLB Index and then increment the TLB index.
+    realTLB[TLBIndex].page = page;
+    realTLB[TLBIndex].frame = frame;
     TLBIndex++;
   }
 }
@@ -221,9 +248,10 @@ int main() {
     pageTable[i].page = -1;
   }
   for (int i = 0; i < TLB_SIZE; i++) {
-    TLB[i].frame = -1;
-    TLB[i].page = -1;
+    realTLB[i].frame = -1;
+    realTLB[i].page = -1;
   }
+  printf("Initiated the page table and TLB table to empty status!\n");
 
   int frame;        // stores current frame of page
   signed char data; // stores current data of page
@@ -245,8 +273,7 @@ int main() {
         // page table with the frame it was loaded into in physical memory.
         frame = physicalMemoryIndex;
         addToPhysicalMemory(addresses[i].page, physicalMemoryIndex);
-        addresses[i].physicalAddress =
-            (frame * PAGE_SIZE) + addresses[i].offset;
+        addresses[i].physicalAddress = (frame * PAGE_SIZE) + addresses[i].offset;
 
         // Add the page to the page table at frame, storing the page
         // and frame info, and grab the data at the memory spot.
@@ -261,7 +288,7 @@ int main() {
       }
       // Add the page to the TLB. This will run regardless of what happened,
       // following the true nature of the TLB.
-      addToTLB(addresses[i].page, frame);
+      addToTLBLRU(addresses[i].page, frame);
     } else {
       // page was found in TLB. save the data and physical address.
       TLBHits++;
@@ -269,16 +296,13 @@ int main() {
       addresses[i].physicalAddress = frame * PAGE_SIZE + addresses[i].offset;
     }
     // write the data to output.txt
-    fprintf(output, "Virtual address: %d Physical address: %d Value: %d\n",
-            addresses[i].value, addresses[i].physicalAddress, data);
+    fprintf(output, "Virtual address: %d Physical address: %d Value: %d\n", addresses[i].value, addresses[i].physicalAddress, data);
   }
   // calculate TLB hit rate and page fault rate
   float tlbHitRate = (float)TLBHits / MAX_ADDRESSES;
   float pageFaultRate = (float)pageFaults / MAX_ADDRESSES;
-  fprintf(output, "TLB hit rate: %d/%d, or %.2f%%\n", TLBHits, MAX_ADDRESSES,
-          tlbHitRate * 100);
-  fprintf(output, "Page fault rate: %d/%d, or %.2f%%\n", pageFaults,
-          MAX_ADDRESSES, pageFaultRate * 100);
+  fprintf(output, "TLB hit rate: %d/%d, or %.2f%%\n", TLBHits, MAX_ADDRESSES, tlbHitRate * 100);
+  fprintf(output, "Page fault rate: %d/%d, or %.2f%%\n", pageFaults, MAX_ADDRESSES, pageFaultRate * 100);
 
   fclose(output);
 
