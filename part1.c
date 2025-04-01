@@ -10,9 +10,9 @@
 int virtualAddress;
 int physicalAddress;
 int memValue;
-int physicalMemoryIndex = 0;
-int TLBIndex = 0;
-int pageTableIndex = 0;
+int physicalMemoryIndex = 0; // basically physicalMemory.size()
+int TLBIndex = 0;       // basically TLB.size()
+int pageTableIndex = 0; // basically pageTable.size()
 int TLBHits = 0;
 int pageFaults = 0;
 
@@ -53,7 +53,6 @@ physicalMemoryBlock physicalMemory[PHYSICAL_MEMORY_SIZE];
 
 // conversion and loading methods ---------------------------------------------
 
-// Converts base 10 numbers to base 2, but omits leading 0's
 long long decToBinary(long long decimal) {
   long long binary = 0;
   long long place = 1;
@@ -66,7 +65,6 @@ long long decToBinary(long long decimal) {
   return binary;
 }
 
-// Converts base 2 numbers to base 2
 long long binaryToDec(long long binary) {
   long long decimal = 0;
   long long base = 1;
@@ -101,8 +99,7 @@ int loadAddresses() {
     pageNumber = binValue / divisor; 
     long long leftMultipler = pageNumber * divisor;
     pageOffset = binValue - leftMultipler;
-    // return to decimal so we can iterate through pages with pageNumber and the
-    // offset
+    // return to decimal so we can iterate through pages with pageNumber and the offset
     addresses[index].page = binaryToDec(pageNumber);
     addresses[index].offset = binaryToDec(pageOffset);
     addresses[index].value = value;
@@ -113,8 +110,7 @@ int loadAddresses() {
   return 0;
 }
 
-// reads entire page data and returns it (to be assigned to a physical memory's
-// page's pageData)
+// reads entire page data and returns it (to be assigned to a physical memory's page's pageData)
 signed char *readBinPage(int page) {
   int index = page * PAGE_SIZE;
 
@@ -191,8 +187,7 @@ void addToTLBLRU(int page, int frame) {
   }
 }
 
-// takes the actual page data and puts it into physical memory at the specified
-// frame
+// takes the actual page data and puts it into physical memory at the specified frame
 void addToPhysicalMemory(int page, int frame) {
   physicalMemory[frame].pageData = readBinPage(page);
   // Increment physical memory index so we can put the next page in the
@@ -201,6 +196,7 @@ void addToPhysicalMemory(int page, int frame) {
 
   // if memory is full (if the index is at max), go back to beginning,
   // simulating FIFO (first index will be overwritten)
+  // this is actually not used here since we don't need a replacement algorithm in part 1 for the memory, but im too scared to delete it
   if (physicalMemoryIndex == PHYSICAL_MEMORY_SIZE) {
     physicalMemoryIndex = 0;
   }
@@ -212,7 +208,7 @@ void addToPageTable(int page, int frame) {
     for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
       pageTable[i] = pageTable[i + 1];
     }
-    // Set the last element equal to the new page and frame
+    // Set the last element equal to the new page and frame. This is also FIFO and not used.
     pageTable[PAGE_TABLE_SIZE - 1].page = page;
     pageTable[PAGE_TABLE_SIZE - 1].frame = frame;
   } else {
@@ -224,7 +220,7 @@ void addToPageTable(int page, int frame) {
   }
 }
 
-// if page is found, return index in the table itself, else return -1
+// if page is found, return frame of page, else return -1
 int searchPageTable(int page) {
   for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
     if (pageTable[i].page == page) {
@@ -262,7 +258,6 @@ int main() {
     if (frame == -1) {
       // TLB miss, search page table for current page
       frame = searchPageTable(addresses[i].page);
-
       if (frame == -1) {
         pageFaults++;
         // Page fault. Update the frame to
@@ -278,7 +273,6 @@ int main() {
         // and frame info, and grab the data at the memory spot.
         addToPageTable(addresses[i].page, frame);
         data = physicalMemory[frame].pageData[addresses[i].offset];
-
       } else {
         // Page was found in page table. Get the data and set the physical
         // address.
@@ -305,6 +299,7 @@ int main() {
 
   fclose(output);
 
+  // free memories
   for (int i = 0; i < PHYSICAL_MEMORY_SIZE; i++) {
     free(physicalMemory[i].pageData);
   }
